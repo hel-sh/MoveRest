@@ -32,7 +32,9 @@ class TimerDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final targetTextColor = (isMoveState || isReadyPhase) ? Colors.white : Colors.black;
+    final targetTextColor = (isMoveState || isReadyPhase)
+        ? Colors.white
+        : Colors.black;
 
     final mainText = isReadyPhase
         ? 'GET READY!'
@@ -82,7 +84,9 @@ class TimerDisplay extends StatelessWidget {
           style: TextStyle(
             fontSize: 22.0,
             color: targetTextColor.withValues(alpha: .8),
-            fontWeight: isReadyPhase || !isMoveState ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isReadyPhase || !isMoveState
+                ? FontWeight.bold
+                : FontWeight.normal,
           ),
         ),
         const SizedBox(height: 10),

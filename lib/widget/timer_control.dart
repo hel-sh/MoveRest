@@ -50,7 +50,7 @@ class _ControlButton extends StatelessWidget {
     required this.text,
     required this.onPressed,
     required this.bgColor,
-    required this.textColor
+    required this.textColor,
   });
 
   @override
@@ -64,10 +64,15 @@ class _ControlButton extends StatelessWidget {
             minimumSize: const Size.fromHeight(60),
             backgroundColor: bgColor,
             foregroundColor: textColor,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             elevation: 8,
           ),
-          child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );

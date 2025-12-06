@@ -5,10 +5,7 @@ import 'duration_changer.dart';
 class MovementDurationEditor extends StatelessWidget {
   final DayModel model;
 
-  const MovementDurationEditor({
-    super.key,
-    required this.model,
-  });
+  const MovementDurationEditor({super.key, required this.model});
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +20,10 @@ class MovementDurationEditor extends StatelessWidget {
             ),
             DurationChanger(
               currentValue: model.moveDurationSeconds,
-              onDecrement: () => model.setMoveDuration(model.moveDurationSeconds - 5),
-              onIncrement: () => model.setMoveDuration(model.moveDurationSeconds + 5),
+              onDecrement: () =>
+                  model.setMoveDuration(model.moveDurationSeconds - 5),
+              onIncrement: () =>
+                  model.setMoveDuration(model.moveDurationSeconds + 5),
               onSet: (v) => model.setMoveDuration(v),
             ),
           ],
@@ -40,8 +39,10 @@ class MovementDurationEditor extends StatelessWidget {
             ),
             DurationChanger(
               currentValue: model.restDurationSeconds,
-              onDecrement: () => model.setRestDuration(model.restDurationSeconds - 5),
-              onIncrement: () => model.setRestDuration(model.restDurationSeconds + 5),
+              onDecrement: () =>
+                  model.setRestDuration(model.restDurationSeconds - 5),
+              onIncrement: () =>
+                  model.setRestDuration(model.restDurationSeconds + 5),
               onSet: (v) => model.setRestDuration(v),
             ),
           ],

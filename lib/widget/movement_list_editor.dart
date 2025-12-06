@@ -7,7 +7,8 @@ class MovementListEditor extends StatelessWidget {
   final String type;
   final Map<int, TextEditingController> controllers;
   final VoidCallback onUpdate;
-  final Function(List<String>, Map<int, TextEditingController>) ensureControllers;
+  final Function(List<String>, Map<int, TextEditingController>)
+  ensureControllers;
 
   const MovementListEditor({
     super.key,
@@ -26,8 +27,10 @@ class MovementListEditor extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Daftar Gerakan:",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        const Text(
+          "Daftar Gerakan:",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         const SizedBox(height: 8),
 
         for (int i = 0; i < movements.length; i++)
@@ -44,7 +47,8 @@ class MovementListEditor extends StatelessWidget {
                     decoration: InputDecoration(
                       labelText: 'Gerakan ${i + 1}',
                       border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8))),
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      ),
                     ),
                   ),
                 ),
@@ -52,10 +56,10 @@ class MovementListEditor extends StatelessWidget {
                   icon: const Icon(Icons.close, color: Colors.red),
                   onPressed: movements.length > 1
                       ? () {
-                    controllers.remove(i)?.dispose();
-                    model.removeMovement(movements, i);
-                    onUpdate();
-                  }
+                          controllers.remove(i)?.dispose();
+                          model.removeMovement(movements, i);
+                          onUpdate();
+                        }
                       : null,
                 ),
               ],
@@ -66,8 +70,10 @@ class MovementListEditor extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: TextButton.icon(
             icon: const Icon(Icons.add, color: Colors.black),
-            label: const Text("Tambah Gerakan",
-                style: TextStyle(color: Colors.black)),
+            label: const Text(
+              "Tambah Gerakan",
+              style: TextStyle(color: Colors.black),
+            ),
             onPressed: () {
               model.addMovement(type);
               onUpdate();

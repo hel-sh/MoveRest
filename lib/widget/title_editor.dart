@@ -5,11 +5,7 @@ class TitleEditor extends StatefulWidget {
   final DayModel model;
   final bool isHiit;
 
-  const TitleEditor({
-    super.key,
-    required this.model,
-    required this.isHiit,
-  });
+  const TitleEditor({super.key, required this.model, required this.isHiit});
 
   @override
   State<TitleEditor> createState() => _TitleEditorState();
@@ -21,7 +17,9 @@ class _TitleEditorState extends State<TitleEditor> {
   @override
   void initState() {
     super.initState();
-    final initialValue = widget.isHiit ? widget.model.hiitTitle : widget.model.woTitle;
+    final initialValue = widget.isHiit
+        ? widget.model.hiitTitle
+        : widget.model.woTitle;
     _controller = TextEditingController(text: initialValue);
 
     _controller.addListener(_onTextChanged);
@@ -29,7 +27,9 @@ class _TitleEditorState extends State<TitleEditor> {
 
   void _onTextChanged() {
     final newValue = _controller.text;
-    final currentValue = widget.isHiit ? widget.model.hiitTitle : widget.model.woTitle;
+    final currentValue = widget.isHiit
+        ? widget.model.hiitTitle
+        : widget.model.woTitle;
 
     if (currentValue != newValue) {
       if (widget.isHiit) {
@@ -54,7 +54,6 @@ class _TitleEditorState extends State<TitleEditor> {
 
   @override
   Widget build(BuildContext context) {
-
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
       child: TextField(

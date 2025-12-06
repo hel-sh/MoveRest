@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../service/audio_player_service.dart';
+import '../service/notification_service.dart';
 import '../widget/timer_control.dart';
 import '../widget/timer_display.dart';
 
@@ -17,13 +18,13 @@ class MovementStopwatchScreen extends StatefulWidget {
   });
 
   @override
-  State<MovementStopwatchScreen> createState() => _MovementStopwatchScreenState();
+  State<MovementStopwatchScreen> createState() =>
+      _MovementStopwatchScreenState();
 }
 
 class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
   Timer? _timer;
   static const int _kInitialCountdown = 3;
-
   int _timeLeftInSeconds = 0;
   bool _isTimerRunning = false;
 
@@ -34,19 +35,53 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
   int _currentMovementIndex = 0;
 
   final AudioPlayerService _audioService = AudioPlayerService();
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
     _timeLeftInSeconds = widget.moveDuration;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notificationService.cancelNotification();
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _notificationService.cancelNotification();
     super.dispose();
   }
 
+  void _updateNotification() {
+    final currentMovementName = widget.movements[_currentMovementIndex];
+
+    String title = _isReadyPhase
+        ? 'Bersiap'
+        : _isMoveState
+        ? currentMovementName
+        : 'ISTIRAHAT';
+
+    String body;
+    if (_isReadyPhase) {
+      body =
+          'Memulai: $currentMovementName | Waktu Sisa: ${_timeLeftInSeconds}s';
+    } else {
+      final totalMovements = widget.movements.length;
+      final currentMovementNumber = _currentMovementIndex + 1;
+      final setInfo =
+          'Set: $_moveCount | Gerakan: $currentMovementNumber/$totalMovements';
+      final time = formatTime(_timeLeftInSeconds);
+
+      body = 'Waktu Sisa: $time\n$setInfo';
+    }
+
+    _notificationService.updateNotification(
+      title: title,
+      body: body,
+      isMoveState: _isMoveState || _isReadyPhase,
+    );
+  }
 
   void _startPhaseTimer(int durationInSeconds) {
     _timer?.cancel();
@@ -57,11 +92,13 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
       _isTimerRunning = true;
     });
 
+    _updateNotification();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timeLeftInSeconds > 0) {
         setState(() {
           _timeLeftInSeconds--;
         });
+        _updateNotification();
       } else {
         _timer?.cancel();
         _handlePhaseCompletion();
@@ -90,7 +127,8 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
       });
     } else {
       setState(() {
-        _currentMovementIndex = (_currentMovementIndex + 1) % widget.movements.length;
+        _currentMovementIndex =
+            (_currentMovementIndex + 1) % widget.movements.length;
         if (_currentMovementIndex == 0) {
           _moveCount++;
         }
@@ -120,6 +158,7 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
     setState(() {
       _isTimerRunning = false;
     });
+    _notificationService.cancelNotification();
   }
 
   void resetTimer() {
@@ -132,6 +171,7 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
       _currentMovementIndex = 0;
       _timeLeftInSeconds = widget.moveDuration;
     });
+    _notificationService.cancelNotification();
   }
 
   String formatTime(int totalSeconds) {
@@ -143,8 +183,11 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
   @override
   Widget build(BuildContext context) {
     final currentMovementName = widget.movements[_currentMovementIndex];
-    final targetColor = (_isMoveState || _isReadyPhase) ? Colors.black : Colors.white;
-    final nextMovementIndex = (_currentMovementIndex + 1) % widget.movements.length;
+    final targetColor = (_isMoveState || _isReadyPhase)
+        ? Colors.black
+        : Colors.white;
+    final nextMovementIndex =
+        (_currentMovementIndex + 1) % widget.movements.length;
     final nextMovementName = widget.movements[nextMovementIndex];
 
     return Scaffold(

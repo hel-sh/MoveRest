@@ -8,9 +8,14 @@ class DayModel extends ChangeNotifier {
 
   static const int _defaultMove = 30;
   static const int _defaultRest = 30;
-  static const List<String> _defaultHiit = ["Seated Knee Tuck", "Mountain Climber", "Push Up"];
+  static const List<String> _defaultHiit = [
+    "Seated Knee Tuck",
+    "Mountain Climber",
+    "Push Up",
+  ];
   static const List<String> _defaultWo = ["Deadlift", "Bench Press", "Squat"];
 
+  String _dayNickname;
   String _hiitTitle = "HIIT";
   String _woTitle = "Workout";
   int _moveDurationSeconds = _defaultMove;
@@ -18,14 +23,16 @@ class DayModel extends ChangeNotifier {
   List<String> _hiitMovements = _defaultHiit.toList();
   List<String> _woMovements = _defaultWo.toList();
 
-  DayModel._internal({required this.dayName}) : _keyPrefix = dayName.toLowerCase();
-
+  DayModel._internal({required this.dayName})
+    : _keyPrefix = dayName.toLowerCase(),
+      _dayNickname = dayName;
   static Future<DayModel> create({required String dayName}) async {
     final model = DayModel._internal(dayName: dayName);
-     await model._loadData();
+    await model._loadData();
     return model;
   }
 
+  String get dayNickname => _dayNickname;
   String get hiitTitle => _hiitTitle;
   String get woTitle => _woTitle;
   int get moveDurationSeconds => _moveDurationSeconds;
@@ -33,32 +40,35 @@ class DayModel extends ChangeNotifier {
   List<String> get hiitMovements => _hiitMovements;
   List<String> get woMovements => _woMovements;
 
-
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    _hiitTitle = prefs.getString('${_keyPrefix}_hiit_title') ?? _hiitTitle;
-    _woTitle = prefs.getString('${_keyPrefix}_wo_title') ?? _woTitle;
+    _dayNickname = prefs.getString('${_keyPrefix}_nickname') ?? dayName;
 
-    _moveDurationSeconds = prefs.getInt('${_keyPrefix}_move_dur') ?? _moveDurationSeconds;
-    _restDurationSeconds = prefs.getInt('${_keyPrefix}_rest_dur') ?? _restDurationSeconds;
+    _hiitTitle = prefs.getString('${_keyPrefix}_hiit_title') ?? 'HIIT';
+    _woTitle = prefs.getString('${_keyPrefix}_wo_title') ?? 'Workout';
 
-    try {
-      final hiitJson = prefs.getString('${_keyPrefix}_hiit_movements');
-      if (hiitJson != null) {
-        _hiitMovements = List<String>.from(jsonDecode(hiitJson));
-      }
-      final woJson = prefs.getString('${_keyPrefix}_wo_movements');
-      if (woJson != null) {
-        _woMovements = List<String>.from(jsonDecode(woJson));
-      }
-    } catch (e) {
-      print("Error loading list data: $e");
+    _moveDurationSeconds =
+        prefs.getInt('${_keyPrefix}_move_dur') ?? _defaultMove;
+    _restDurationSeconds =
+        prefs.getInt('${_keyPrefix}_rest_dur') ?? _defaultRest;
+
+    final hiitJson = prefs.getString('${_keyPrefix}_hiit_movements');
+    if (hiitJson != null) {
+      _hiitMovements = (jsonDecode(hiitJson) as List).cast<String>();
     }
+
+    final woJson = prefs.getString('${_keyPrefix}_wo_movements');
+    if (woJson != null) {
+      _woMovements = (jsonDecode(woJson) as List).cast<String>();
+    }
+    notifyListeners();
   }
 
   Future<void> _saveData() async {
     final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString('${_keyPrefix}_nickname', _dayNickname);
 
     await prefs.setString('${_keyPrefix}_hiit_title', _hiitTitle);
     await prefs.setString('${_keyPrefix}_wo_title', _woTitle);
@@ -66,10 +76,54 @@ class DayModel extends ChangeNotifier {
     await prefs.setInt('${_keyPrefix}_move_dur', _moveDurationSeconds);
     await prefs.setInt('${_keyPrefix}_rest_dur', _restDurationSeconds);
 
-    await prefs.setString('${_keyPrefix}_hiit_movements', jsonEncode(_hiitMovements));
-    await prefs.setString('${_keyPrefix}_wo_movements', jsonEncode(_woMovements));
+    await prefs.setString(
+      '${_keyPrefix}_hiit_movements',
+      jsonEncode(_hiitMovements),
+    );
+    await prefs.setString(
+      '${_keyPrefix}_wo_movements',
+      jsonEncode(_woMovements),
+    );
   }
 
+  void setDayNickname(String nickname) {
+    _dayNickname = nickname;
+    _saveData();
+    notifyListeners();
+  }
+
+  Future<void> resetDay() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.remove('${_keyPrefix}_nickname');
+    await prefs.remove('${_keyPrefix}_hiit_title');
+    await prefs.remove('${_keyPrefix}_wo_title');
+    await prefs.remove('${_keyPrefix}_move_dur');
+    await prefs.remove('${_keyPrefix}_rest_dur');
+    await prefs.remove('${_keyPrefix}_hiit_movements');
+    await prefs.remove('${_keyPrefix}_wo_movements');
+
+    _dayNickname = dayName;
+    _hiitTitle = 'HIIT';
+    _woTitle = 'Workout';
+    _moveDurationSeconds = _defaultMove;
+    _restDurationSeconds = _defaultRest;
+    _hiitMovements = _defaultHiit.toList();
+    _woMovements = _defaultWo.toList();
+
+    notifyListeners();
+  }
+
+  Future<void> deleteData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('${_keyPrefix}_nickname');
+    await prefs.remove('${_keyPrefix}_hiit_title');
+    await prefs.remove('${_keyPrefix}_wo_title');
+    await prefs.remove('${_keyPrefix}_move_dur');
+    await prefs.remove('${_keyPrefix}_rest_dur');
+    await prefs.remove('${_keyPrefix}_hiit_movements');
+    await prefs.remove('${_keyPrefix}_wo_movements');
+  }
 
   void setHiitTitle(String title) {
     _hiitTitle = title;
@@ -107,16 +161,20 @@ class DayModel extends ChangeNotifier {
 
   void addMovement(String type) {
     if (type == 'hiit') {
-      _hiitMovements.add("");
-    } else {
-      _woMovements.add("");
+      _hiitMovements.add('New Movement');
+    } else if (type == 'wo') {
+      _woMovements.add('New Movement');
     }
     _saveData();
     notifyListeners();
   }
 
   void removeMovement(List<String> list, int index) {
-    list.removeAt(index);
+    if (list == _hiitMovements) {
+      _hiitMovements.removeAt(index);
+    } else if (list == _woMovements) {
+      _woMovements.removeAt(index);
+    }
     _saveData();
     notifyListeners();
   }
