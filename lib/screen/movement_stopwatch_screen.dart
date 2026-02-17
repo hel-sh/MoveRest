@@ -22,17 +22,16 @@ class MovementStopwatchScreen extends StatefulWidget {
       _MovementStopwatchScreenState();
 }
 
-class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
+class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> with WidgetsBindingObserver {
   Timer? _timer;
   static const int _kInitialCountdown = 3;
   int _timeLeftInSeconds = 0;
   bool _isTimerRunning = false;
-
   bool _isReadyPhase = false;
-
   bool _isMoveState = true;
   int _moveCount = 0;
   int _currentMovementIndex = 0;
+  DateTime? _backgroundTimestamp;
 
   final AudioPlayerService _audioService = AudioPlayerService();
   final NotificationService _notificationService = NotificationService();
@@ -40,6 +39,7 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _timeLeftInSeconds = widget.moveDuration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notificationService.cancelNotification();
@@ -48,31 +48,76 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _notificationService.cancelNotification();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _backgroundTimestamp = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_isTimerRunning && _backgroundTimestamp != null) {
+        final difference = DateTime.now().difference(_backgroundTimestamp!).inSeconds;
+        _handleBackgroundGap(difference);
+      }
+      _backgroundTimestamp = null;
+    }
+  }
+
+  void _handleBackgroundGap(int gapSeconds) {
+    int remainingGap = gapSeconds;
+
+    while (remainingGap > 0) {
+      if (_timeLeftInSeconds > remainingGap) {
+        setState(() {
+          _timeLeftInSeconds -= remainingGap;
+        });
+        remainingGap = 0;
+      } else {
+        remainingGap -= _timeLeftInSeconds;
+        _jumpToNextPhase();
+      }
+    }
+
+    if (_isTimerRunning) {
+      _startPhaseTimer(_timeLeftInSeconds);
+    }
+  }
+
+  void _jumpToNextPhase() {
+    if (_isReadyPhase) {
+      _isReadyPhase = false;
+      _moveCount = 1;
+      _currentMovementIndex = 0;
+      _isMoveState = true;
+      _timeLeftInSeconds = widget.moveDuration;
+    } else if (_isMoveState) {
+      _isMoveState = false;
+      _timeLeftInSeconds = widget.restDuration;
+    } else {
+      _currentMovementIndex = (_currentMovementIndex + 1) % widget.movements.length;
+      if (_currentMovementIndex == 0) {
+        _moveCount++;
+      }
+      _isMoveState = true;
+      _timeLeftInSeconds = widget.moveDuration;
+    }
+  }
+
   void _updateNotification() {
     final currentMovementName = widget.movements[_currentMovementIndex];
-
-    String title = _isReadyPhase
-        ? 'Bersiap'
-        : _isMoveState
-        ? currentMovementName
-        : 'ISTIRAHAT';
-
+    String title = _isReadyPhase ? 'Bersiap' : _isMoveState ? currentMovementName : 'ISTIRAHAT';
     String body;
     if (_isReadyPhase) {
-      body =
-          'Memulai: $currentMovementName | Waktu Sisa: ${_timeLeftInSeconds}s';
+      body = 'Memulai: $currentMovementName | Waktu Sisa: ${_timeLeftInSeconds}s';
     } else {
       final totalMovements = widget.movements.length;
       final currentMovementNumber = _currentMovementIndex + 1;
-      final setInfo =
-          'Set: $_moveCount | Gerakan: $currentMovementNumber/$totalMovements';
+      final setInfo = 'Set: $_moveCount | Gerakan: $currentMovementNumber/$totalMovements';
       final time = formatTime(_timeLeftInSeconds);
-
       body = 'Waktu Sisa: $time\n$setInfo';
     }
 
@@ -85,7 +130,10 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
 
   void _startPhaseTimer(int durationInSeconds) {
     _timer?.cancel();
-    if (durationInSeconds <= 0) return;
+    if (durationInSeconds <= 0) {
+      _handlePhaseCompletion();
+      return;
+    }
 
     setState(() {
       _timeLeftInSeconds = durationInSeconds;
@@ -127,8 +175,7 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
       });
     } else {
       setState(() {
-        _currentMovementIndex =
-            (_currentMovementIndex + 1) % widget.movements.length;
+        _currentMovementIndex = (_currentMovementIndex + 1) % widget.movements.length;
         if (_currentMovementIndex == 0) {
           _moveCount++;
         }
@@ -142,7 +189,6 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
 
   void startTimer() {
     if (_isTimerRunning) return;
-
     if (_moveCount == 0 && !_isReadyPhase) {
       setState(() {
         _isReadyPhase = true;
@@ -183,11 +229,9 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
   @override
   Widget build(BuildContext context) {
     final currentMovementName = widget.movements[_currentMovementIndex];
-    final targetColor = (_isMoveState || _isReadyPhase)
-        ? Colors.black
-        : Colors.white;
-    final nextMovementIndex =
-        (_currentMovementIndex + 1) % widget.movements.length;
+    final targetColor = (_isMoveState || _isReadyPhase) ? Colors.black : Colors.white;
+    final sliderActiveColor = (_isMoveState || _isReadyPhase) ? Colors.white : Colors.black;
+    final nextMovementIndex = (_currentMovementIndex + 1) % widget.movements.length;
     final nextMovementName = widget.movements[nextMovementIndex];
 
     return Scaffold(
@@ -202,10 +246,30 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
         color: targetColor,
         alignment: Alignment.center,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.volume_down, color: sliderActiveColor.withValues(alpha: 0.7)),
+                  Expanded(
+                    child: Slider(
+                      value: _audioService.volume,
+                      onChanged: (value) {
+                        setState(() {
+                          _audioService.setVolume(value);
+                        });
+                      },
+                      activeColor: sliderActiveColor,
+                      inactiveColor: sliderActiveColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  Icon(Icons.volume_up, color: sliderActiveColor.withValues(alpha: 0.7)),
+                ],
+              ),
+              const SizedBox(height: 20),
               TimerDisplay(
                 timeLeftInSeconds: _timeLeftInSeconds,
                 isReadyPhase: _isReadyPhase,
@@ -220,9 +284,7 @@ class _MovementStopwatchScreenState extends State<MovementStopwatchScreen> {
                 formatTime: formatTime,
                 nextMovementName: nextMovementName,
               ),
-
               const SizedBox(height: 50),
-
               TimerControl(
                 isTimerRunning: _isTimerRunning,
                 startTimer: startTimer,
