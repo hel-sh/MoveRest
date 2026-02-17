@@ -1,16 +1,8 @@
-# move_rest
+---
+## ⚙️ Cara Menjalankan Aplikasi
 
-A new Flutter project.
 
-## Getting Started
+https://drive.google.com/drive/folders/1p_4c07k-UgrE10B6Vcdcovvk8d7eXz3y?usp=sharingLink 
+Google Drive berisi file Move Rest.apk
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
